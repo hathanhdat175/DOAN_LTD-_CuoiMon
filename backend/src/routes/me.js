@@ -1,7 +1,10 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
+const config = require('../config');
 const db = require('../db');
-const { authenticate } = require('../middleware/auth');
-const { num, toBook, BOOK_COLUMNS, BOOK_FROM } = require('../utils/mappers');
+const { authenticate, signToken } = require('../middleware/auth');
+const { assertStrongPassword } = require('../utils/password');
+const { num, toBook, toUser, BOOK_COLUMNS, BOOK_FROM } = require('../utils/mappers');
 const { badRequest, notFound, parseId } = require('../utils/http-error');
 
 /**
@@ -176,6 +179,40 @@ router.delete('/device-token', async (req, res) => {
     token: { type: db.sql.VarChar(512), value: token },
   });
   res.status(204).end();
+});
+
+/**
+ * PUT /api/me/password  { currentPassword, newPassword } — đổi mật khẩu.
+ * Phải nhập đúng mật khẩu hiện tại; mật khẩu mới phải đủ mạnh và khác mật khẩu cũ.
+ * TokenVersion tăng lên nên các thiết bị khác đang đăng nhập bị đăng xuất; máy hiện tại nhận token mới.
+ */
+router.put('/password', async (req, res) => {
+  const currentPassword = String(req.body.currentPassword || '');
+  const newPassword = String(req.body.newPassword || '');
+  if (!currentPassword || !newPassword) {
+    throw badRequest('Vui lòng nhập mật khẩu hiện tại và mật khẩu mới.');
+  }
+  const r = await db.query('SELECT PasswordHash FROM dbo.Users WHERE UserId = @uid', { uid: req.user.UserId });
+  if (!(await bcrypt.compare(currentPassword, r.recordset[0].PasswordHash))) {
+    throw badRequest('Mật khẩu hiện tại không đúng.');
+  }
+  if (currentPassword === newPassword) {
+    throw badRequest('Mật khẩu mới phải khác mật khẩu hiện tại.');
+  }
+  assertStrongPassword(newPassword, { email: req.user.Email });
+
+  const hash = await bcrypt.hash(newPassword, config.bcryptRounds);
+  const result = await db.query(
+    `UPDATE dbo.Users
+       SET PasswordHash = @hash, TokenVersion = TokenVersion + 1, PasswordChangedAt = SYSDATETIME(),
+           FailedLoginCount = 0, LockoutUntil = NULL
+     OUTPUT inserted.UserId, inserted.FullName, inserted.Email, inserted.Role, inserted.IsLocked,
+            inserted.CreatedAt, inserted.TokenVersion
+     WHERE UserId = @uid`,
+    { hash, uid: req.user.UserId },
+  );
+  const user = result.recordset[0];
+  res.json({ token: signToken(user), user: toUser(user) });
 });
 
 module.exports = router;

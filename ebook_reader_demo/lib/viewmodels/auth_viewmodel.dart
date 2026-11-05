@@ -38,6 +38,10 @@ class AuthViewModel extends BaseViewModel {
     return _busy(() => _auth.register(name: name, email: email, password: password, role: role));
   }
 
+  /// Đổi mật khẩu; trả về `null` nếu thành công.
+  Future<String?> changePassword(String currentPassword, String newPassword) =>
+      _busy(() => _auth.changePassword(currentPassword, newPassword));
+
   /// Dùng ở màn hình Splash: đăng nhập lại bằng token đã lưu.
   Future<AppUser?> restoreSession() => _auth.restoreSession();
 

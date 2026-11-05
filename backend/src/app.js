@@ -10,6 +10,22 @@ const push = require('./utils/push');
 function createApp() {
   const app = express();
 
+  if (config.weakJwtSecret) {
+    console.warn('[bảo mật] JWT_SECRET trong .env đang yếu hoặc để mặc định. Hãy đổi thành chuỗi ngẫu nhiên dài ≥ 32 ký tự.');
+  }
+
+  // Không để lộ thông tin máy chủ, thêm các header bảo mật cơ bản cho mọi phản hồi.
+  app.disable('x-powered-by');
+  app.use((_req, res, next) => {
+    res.set({
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Cross-Origin-Resource-Policy': 'cross-origin',
+    });
+    next();
+  });
+
   app.use(cors());
   app.use(express.json({ limit: '1mb' }));
 

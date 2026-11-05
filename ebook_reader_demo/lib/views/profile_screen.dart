@@ -7,6 +7,7 @@ import '../viewmodels/auth_viewmodel.dart';
 import '../viewmodels/reader_viewmodel.dart';
 import '../widgets/common.dart';
 import 'auth/login_screen.dart';
+import 'change_password_screen.dart';
 import 'notifications_screen.dart';
 import 'reader/downloads_screen.dart';
 import 'reader/reader_shell.dart';
@@ -124,6 +125,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       leading: const Icon(Icons.event_outlined, color: AppColors.primary),
                       title: const Text('Ngày tham gia'),
                       trailing: Text(formatDate(user.joinedAt), style: const TextStyle(color: AppColors.muted)),
+                    ),
+                    const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.line),
+                    ListTile(
+                      leading: const Icon(Icons.lock_reset, color: AppColors.primary),
+                      title: const Text('Đổi mật khẩu'),
+                      subtitle: const Text('Bảo vệ tài khoản bằng mật khẩu mạnh'),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(builder: (BuildContext _) => const ChangePasswordScreen()),
+                        );
+                      },
                     ),
                     const Divider(height: 1, indent: 16, endIndent: 16, color: AppColors.line),
                     ListTile(

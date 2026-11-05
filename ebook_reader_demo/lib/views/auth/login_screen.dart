@@ -5,8 +5,12 @@ import '../../app_theme.dart';
 import '../../models/models.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/common.dart';
+import '../../widgets/password_field.dart';
 import '../role_home.dart';
 import 'register_screen.dart';
+
+/// Mật khẩu của các tài khoản demo (đạt chính sách mật khẩu: chữ hoa, chữ thường, số, ký tự đặc biệt).
+const String demoPassword = 'Demo@123';
 
 /// Màn hình Đăng nhập.
 class LoginScreen extends StatefulWidget {
@@ -20,7 +24,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final TextEditingController _emailCtrl = TextEditingController();
   final TextEditingController _passwordCtrl = TextEditingController();
-  bool _hidePassword = true;
 
   @override
   void dispose() {
@@ -55,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
   /// Điền sẵn tài khoản demo rồi đăng nhập.
   void _quickLogin(String email) {
     _emailCtrl.text = email;
-    _passwordCtrl.text = '123456';
+    _passwordCtrl.text = demoPassword;
     _login();
   }
 
@@ -110,26 +113,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const SizedBox(height: 14),
-                TextFormField(
+                PasswordField(
                   controller: _passwordCtrl,
-                  obscureText: _hidePassword,
                   textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (String _) => _login(),
-                  decoration: fieldDecoration(
-                    'Mật khẩu',
-                    icon: Icons.lock_outline,
-                    suffix: IconButton(
-                      icon: Icon(_hidePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                      onPressed: () {
-                        setState(() {
-                          _hidePassword = !_hidePassword;
-                        });
-                      },
-                    ),
-                  ),
+                  autofillHints: const <String>[AutofillHints.password],
+                  onSubmitted: (String _) => _login(),
                   validator: (String? value) {
-                    if ((value ?? '').length < 6) {
-                      return 'Mật khẩu tối thiểu 6 ký tự';
+                    if ((value ?? '').isEmpty) {
+                      return 'Vui lòng nhập mật khẩu';
                     }
                     return null;
                   },
@@ -176,9 +167,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Bấm để đăng nhập nhanh theo từng vai trò (mật khẩu: 123456).',
-                        style: TextStyle(fontSize: 13, color: AppColors.muted),
+                      Text(
+                        'Bấm để đăng nhập nhanh theo từng vai trò (mật khẩu: $demoPassword).',
+                        style: const TextStyle(fontSize: 13, color: AppColors.muted),
                       ),
                       const SizedBox(height: 12),
                       _DemoAccountTile(

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../models/models.dart';
+import '../../utils/password_policy.dart';
 import 'bookhub_api.dart';
 
 /// Máy chủ giả lập trong bộ nhớ, có cùng quy tắc nghiệp vụ với REST API.
@@ -117,22 +118,69 @@ class MockBookHubApi implements BookHubApi {
   // Xác thực
   // ---------------------------------------------------------------------------
 
+  /// Sai mật khẩu liên tiếp bao nhiêu lần thì tạm khóa, và khóa trong bao lâu (giống máy chủ).
+  static const int maxLoginAttempts = 5;
+  static const Duration loginLockDuration = Duration(minutes: 15);
+
   @override
   Future<AuthResult> login(String email, String password) async {
     await _delay();
+    const String wrong = 'Email hoặc mật khẩu không đúng.';
     final String mail = email.trim().toLowerCase();
     for (final _MUser u in _users) {
       if (u.email == mail) {
+        final DateTime? until = u.lockoutUntil;
+        if (until != null && until.isAfter(DateTime.now())) {
+          final int minutes = (until.difference(DateTime.now()).inSeconds / 60).ceil();
+          throw ApiException(
+            'Bạn đã nhập sai mật khẩu quá nhiều lần. Vui lòng thử lại sau $minutes phút.',
+            statusCode: 429,
+          );
+        }
         if (u.password != password) {
-          throw ApiException('Mật khẩu không đúng.', statusCode: 401);
+          u.failedLogins++;
+          if (u.failedLogins >= maxLoginAttempts) {
+            u.failedLogins = 0;
+            u.lockoutUntil = DateTime.now().add(loginLockDuration);
+            throw ApiException(
+              'Bạn đã nhập sai mật khẩu $maxLoginAttempts lần. '
+              'Đăng nhập bị tạm khóa ${loginLockDuration.inMinutes} phút.',
+              statusCode: 429,
+            );
+          }
+          final int left = maxLoginAttempts - u.failedLogins;
+          throw ApiException(
+            left <= 2 ? '$wrong Còn $left lần thử trước khi bị tạm khóa.' : wrong,
+            statusCode: 401,
+          );
         }
         if (u.locked) {
           throw ApiException('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.', statusCode: 403);
         }
+        u.failedLogins = 0;
+        u.lockoutUntil = null;
         return AuthResult(token: 'mock-token-${u.id}', user: u.toUser());
       }
     }
-    throw ApiException('Email chưa được đăng ký.', statusCode: 401);
+    throw ApiException(wrong, statusCode: 401);
+  }
+
+  @override
+  Future<AuthResult> changePassword(String currentPassword, String newPassword) async {
+    await _delay();
+    final _MUser u = _auth();
+    if (u.password != currentPassword) {
+      throw ApiException('Mật khẩu hiện tại không đúng.', statusCode: 400);
+    }
+    if (currentPassword == newPassword) {
+      throw ApiException('Mật khẩu mới phải khác mật khẩu hiện tại.', statusCode: 400);
+    }
+    final String? error = PasswordPolicy.validate(newPassword, email: u.email);
+    if (error != null) {
+      throw ApiException('$error.', statusCode: 400);
+    }
+    u.password = newPassword;
+    return AuthResult(token: 'mock-token-${u.id}', user: u.toUser());
   }
 
   @override
@@ -149,6 +197,10 @@ class MockBookHubApi implements BookHubApi {
     }
     if (role == UserRole.admin) {
       throw ApiException('Chỉ được đăng ký vai trò Reader hoặc Publisher.', statusCode: 400);
+    }
+    final String? weak = PasswordPolicy.validate(password, email: mail);
+    if (weak != null) {
+      throw ApiException('$weak.', statusCode: 400);
     }
     final _MUser u = _MUser(_newId(), name.trim(), mail, password, role, DateTime.now());
     _users.add(u);
@@ -644,7 +696,7 @@ class MockBookHubApi implements BookHubApi {
     DateTime ago(int days) => now.subtract(Duration(days: days));
 
     void addUser(String id, String name, String email, UserRole role, int daysAgo, {bool locked = false}) {
-      _users.add(_MUser(id, name, email, '123456', role, ago(daysAgo), locked: locked));
+      _users.add(_MUser(id, name, email, 'Demo@123', role, ago(daysAgo), locked: locked));
     }
 
     addUser('1', 'Hà Thành Đạt', 'reader@demo.com', UserRole.reader, 40);
@@ -723,10 +775,14 @@ class _MUser {
   final String id;
   final String name;
   final String email;
-  final String password;
+  String password;
   final UserRole role;
   final DateTime createdAt;
   bool locked;
+
+  /// Giống cột Users.FailedLoginCount / Users.LockoutUntil.
+  int failedLogins = 0;
+  DateTime? lockoutUntil;
 
   /// Giống cột Users.LastReadNotificationId.
   int lastReadNotice = 0;

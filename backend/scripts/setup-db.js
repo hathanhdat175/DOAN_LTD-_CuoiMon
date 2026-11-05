@@ -108,7 +108,7 @@ async function generateSamplePdfs() {
   try {
     await runSqlScript();
     await generateSamplePdfs();
-    console.log('[setup] Hoàn tất. Tài khoản mẫu: reader@demo.com / publisher@demo.com / admin@demo.com (mật khẩu 123456)');
+    console.log('[setup] Hoàn tất. Tài khoản mẫu: reader@demo.com / publisher@demo.com / admin@demo.com (mật khẩu Demo@123)');
   } catch (err) {
     console.error('[setup] Lỗi:', err.message);
     process.exitCode = 1;

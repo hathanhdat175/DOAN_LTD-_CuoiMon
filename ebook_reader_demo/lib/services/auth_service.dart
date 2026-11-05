@@ -53,6 +53,20 @@ class AuthService {
     }
   }
 
+  /// Đổi mật khẩu: lưu token mới do máy chủ trả về (giữ nguyên dữ liệu của phiên).
+  Future<String?> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final AuthResult result = await _store.api.changePassword(currentPassword, newPassword);
+      _store.api.token = result.token;
+      _store.currentUser = result.user;
+      await _store.tokens.write(result.token);
+      _store.commit();
+      return null;
+    } on ApiException catch (e) {
+      return e.message;
+    }
+  }
+
   /// Mở lại phiên đăng nhập từ token đã lưu (màn hình Splash).
   /// Trả về người dùng nếu token còn hợp lệ, ngược lại xóa token và trả về null.
   Future<AppUser?> restoreSession() async {

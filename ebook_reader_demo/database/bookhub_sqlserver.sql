@@ -40,6 +40,13 @@ CREATE TABLE dbo.Users (
     CreatedAt     DATETIME2(0)      NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT (SYSDATETIME()),
     -- Mã thông báo mới nhất người dùng đã xem: thông báo có NotificationId lớn hơn là "chưa đọc".
     LastReadNotificationId INT      NOT NULL CONSTRAINT DF_Users_LastReadNotificationId DEFAULT (0),
+    -- Bảo mật đăng nhập: sai mật khẩu 5 lần liên tiếp thì tạm khóa đến LockoutUntil (15 phút).
+    FailedLoginCount INT            NOT NULL CONSTRAINT DF_Users_FailedLoginCount DEFAULT (0),
+    LockoutUntil  DATETIME2(0)      NULL,
+    -- Tăng lên mỗi lần đổi mật khẩu: JWT mang phiên bản cũ bị từ chối (đăng xuất các thiết bị khác).
+    TokenVersion  INT               NOT NULL CONSTRAINT DF_Users_TokenVersion DEFAULT (0),
+    PasswordChangedAt DATETIME2(0)  NULL,
+    LastLoginAt   DATETIME2(0)      NULL,
     CONSTRAINT PK_Users       PRIMARY KEY (UserId),
     CONSTRAINT UQ_Users_Email UNIQUE (Email),
     CONSTRAINT CK_Users_Role  CHECK (Role IN ('Reader', 'Publisher', 'Admin'))
@@ -178,10 +185,11 @@ GO
 
 /* =============================================================================
    DỮ LIỆU MẪU
-   Mật khẩu của mọi tài khoản mẫu: 123456 (đã băm bằng bcrypt, cost = 10).
+   Mật khẩu của mọi tài khoản mẫu: Demo@123 (đã băm bằng bcrypt, cost = 10).
+   Mật khẩu mới phải có ít nhất 8 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt.
    File PDF của sách mẫu được tạo bởi lệnh "npm run setup-db" trong thư mục backend.
    ============================================================================= */
-DECLARE @pwd VARCHAR(255) = '$2b$10$LdAP3BfAvdMuaQ6rTjWXhuRzaf1CuETqrSMBr80uGd/fpDunNQYZW';
+DECLARE @pwd VARCHAR(255) = '$2b$10$2s1C1tYrYJM69Vr/AzK9LOfxtZwYnLI5pjeLfRqJn1KqOApHABpkC';
 DECLARE @now DATETIME2(0) = SYSDATETIME();
 
 SET IDENTITY_INSERT dbo.Users ON;

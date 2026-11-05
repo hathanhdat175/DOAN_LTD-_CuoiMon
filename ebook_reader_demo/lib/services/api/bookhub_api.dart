@@ -14,6 +14,9 @@ class ApiException implements Exception {
   bool get isNetworkError => statusCode == null;
   bool get isUnauthorized => statusCode == 401;
 
+  /// Bị tạm khóa / giới hạn do thao tác quá nhiều lần.
+  bool get isRateLimited => statusCode == 429;
+
   @override
   String toString() => message;
 }
@@ -48,6 +51,9 @@ abstract class BookHubApi {
     required UserRole role,
   });
   Future<AppUser> me();
+
+  /// Đổi mật khẩu (cần mật khẩu hiện tại). Trả về token mới; token cũ trên các máy khác hết hiệu lực.
+  Future<AuthResult> changePassword(String currentPassword, String newPassword);
 
   // ----- Reader (mọi vai trò) -----
   Future<List<BookCategory>> getCategories();

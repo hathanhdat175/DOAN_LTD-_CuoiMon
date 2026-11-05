@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 
 import '../../app_theme.dart';
 import '../../models/models.dart';
+import '../../utils/password_policy.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../widgets/common.dart';
+import '../../widgets/password_field.dart';
 import '../role_home.dart';
 
 /// Màn hình Đăng ký: người dùng chọn vai trò Reader hoặc Publisher.
@@ -135,25 +137,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 14),
-                TextFormField(
+                PasswordField(
                   controller: _passwordCtrl,
-                  obscureText: true,
-                  textInputAction: TextInputAction.next,
-                  decoration: fieldDecoration('Mật khẩu', icon: Icons.lock_outline),
-                  validator: (String? value) {
-                    if ((value ?? '').length < 6) {
-                      return 'Mật khẩu tối thiểu 6 ký tự';
-                    }
-                    return null;
-                  },
+                  autofillHints: const <String>[AutofillHints.newPassword],
+                  validator: (String? value) => PasswordPolicy.validate(value, email: _emailCtrl.text),
                 ),
-                const SizedBox(height: 14),
-                TextFormField(
+                PasswordChecklist(controller: _passwordCtrl),
+                const SizedBox(height: 10),
+                PasswordField(
                   controller: _confirmCtrl,
-                  obscureText: true,
+                  label: 'Nhập lại mật khẩu',
                   textInputAction: TextInputAction.done,
-                  decoration: fieldDecoration('Nhập lại mật khẩu', icon: Icons.lock_outline),
+                  onSubmitted: (String _) => _register(),
                   validator: (String? value) {
+                    if ((value ?? '').isEmpty) {
+                      return 'Vui lòng nhập lại mật khẩu';
+                    }
                     if (value != _passwordCtrl.text) {
                       return 'Mật khẩu nhập lại không khớp';
                     }

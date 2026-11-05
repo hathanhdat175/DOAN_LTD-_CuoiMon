@@ -124,6 +124,13 @@ class RestBookHubApi implements BookHubApi {
   @override
   Future<AppUser> me() => _get('/api/auth/me', (dynamic d) => AppUser.fromJson(d as Map<String, dynamic>));
 
+  @override
+  Future<AuthResult> changePassword(String currentPassword, String newPassword) => _put(
+        '/api/me/password',
+        _auth,
+        data: <String, dynamic>{'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+
   // ---------------------------------------------------------------------------
   // Reader
   // ---------------------------------------------------------------------------
