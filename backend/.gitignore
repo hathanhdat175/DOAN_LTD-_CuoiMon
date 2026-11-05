@@ -1,0 +1,9 @@
+node_modules/
+.env
+uploads/pdf/*
+uploads/cover/*
+!uploads/pdf/.gitkeep
+!uploads/cover/.gitkeep
+
+# Khóa Firebase (không đưa lên Git)
+firebase-service-account*.json

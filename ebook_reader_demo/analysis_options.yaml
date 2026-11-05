@@ -1,0 +1,8 @@
+# Cấu hình phân tích mã nguồn (giữ mặc định của Dart, không cần cài thêm gói lint).
+analyzer:
+  errors:
+    deprecated_member_use: ignore
+  exclude:
+    - build/**
+    - android/**
+    - web/**

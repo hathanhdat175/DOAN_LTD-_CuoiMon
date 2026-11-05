@@ -1,0 +1,9 @@
+.dart_tool/
+.idea/
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.flutter-plugins
+.flutter-plugins-dependencies

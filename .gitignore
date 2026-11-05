@@ -1,0 +1,23 @@
+# Thu muc rieng cua cong cu, ket qua kiem thu, sao luu
+.claude/
+_ketqua_kiemthu/
+_sao_luu_truoc_*/
+
+# Bi mat - khong dua len GitHub
+.env
+firebase-service-account*.json
+**/android/local.properties
+**/android/key.properties
+*.jks
+*.keystore
+
+# Sinh ra khi build / cai goi
+node_modules/
+build/
+.dart_tool/
+.gradle/
+
+# Windows / VS Code
+Thumbs.db
+desktop.ini
+.vscode/
